@@ -144,16 +144,15 @@
 						<?php } ?>
 						
 					</div>
+
 					
 	</div>
-				
+		
 	<?php 
 	um_reset_user_clean();
 	} // end foreach
 
 	um_reset_user();
 	?>
-
+   
 	<div class="um-clear"></div>
-
-</div>

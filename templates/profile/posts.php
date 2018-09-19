@@ -23,8 +23,8 @@
  */
 UM()->shortcodes()->loop = apply_filters( 'um_profile_query_make_posts', $query_posts );
 
-if ( UM()->shortcodes()->loop->have_posts() ) {
-
+//if ( UM()->shortcodes()->loop->have_posts() ) {
+  if(true) {
 	UM()->shortcodes()->load_template( 'profile/posts-single' ); ?>
 	
 	<div class="um-ajax-items">

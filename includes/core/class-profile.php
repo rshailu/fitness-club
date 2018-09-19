@@ -39,12 +39,91 @@ if ( ! class_exists( 'um\core\Profile' ) ) {
 			add_action( 'template_redirect', array( &$this, 'active_tab' ), 10002 );
 			add_action( 'template_redirect', array( &$this, 'active_subnav' ), 10002 );
 		}
+		/**
+		 * Save Weight Entry
+		 */
+		function ajax_save_weight_entry() {
+			global $wpdb;
+			extract( $_REQUEST );
+			
+			$weight = $_REQUEST["weight"];
+			$fat = $_REQUEST["fat"];
+			$muscle = $_REQUEST["muscle"];
+			$weightEntryDate = $_REQUEST["weightEntryDate"];
+			$weight = $_REQUEST["weight"];
+			$weightDate =  date('Y-m-d H:i:s');
+			error_log("weightDate now" . $weightDate);
+			if(isset($weightEntryDate)) {
+				$weightDate = date('Y-m-d H:i:s', strtotime($weightEntryDate));
+				error_log("weightDate entered " . $weightDate);
+			}
 
+			$wpdb->insert("wp_WEIGHT_TRACKER",array(
+			"weight_user_id" => $user_id,
+			"weight_date"=>$weightDate,
+			"weight" => $weight,
+			"fat"=>$fat,
+			"muscle"=>$muscle	
+			));
+			$this->get_user_weight_list($user_id);	
+		}
+		/**
+		 * Get list of weight information for a given user
+		 *
+		 *
+		 * @param $user_id
+		 *
+		 * @return array
+		 */
+		function get_user_weight_list( $user_id ) {
+			global $wpdb;
+
+			$weightlist = $wpdb->get_results( $wpdb->prepare(
+				"SELECT weight_date, weight, fat, muscle 
+				FROM wp_WEIGHT_TRACKER
+				WHERE weight_user_id = %d",
+				$user_id
+			), ARRAY_A );
+
+			$filtered = array();
+			foreach ( $weightlist as $data ) {
+				error_log("weight data from db: " . $data['weight_date']." | ". $data['weight']." | ". $data['fat']. " | ".$data['muscle']);
+			}
+
+			return $weightlist;
+		}
+		/**
+		 * Return data formats
+		 *
+		 * @param $data
+		 * @return array
+		 */
+		function fc_field_format( $data ) {
+
+		    $formats = [
+		        'id' => '%d',
+		        'weight' => '%d',
+		        'fat' => '%d',
+				'muscle' => '%d',
+		        'weightEntryDate' => '%d'
+		    ];
+
+		    $return = [];
+
+		    foreach ( $data as $key => $value) {
+		        if ( false === empty( $formats[ $key ] ) ) {
+		            $return[] = $formats[ $key ];
+		        }
+		    }
+
+		    return $return;
+		}
 
 		/**
 		 * Delete profile avatar AJAX handler
 		 */
 		function ajax_delete_profile_photo() {
+
 			/**
 			 * @var $user_id
 			 */
@@ -389,6 +468,252 @@ if ( ! class_exists( 'um\core\Profile' ) ) {
 			</div>
 
 			<?php
+		} //end of new_ui
+
+		/**
+		 * converts the color from hex to RGB
+		 *
+		 * @param string $colour
+		 * @param string $alpha
+		 * @return string
+		 */
+		function um_hex_to_rgb( $colour = '', $alpha = null ) {
+
+			if ( $colour[0] == '#' ) {
+				$colour = substr( $colour, 1 );
+			}
+			if ( strlen( $colour ) == 6 ) {
+				list( $r, $g, $b ) = array( $colour[0] . $colour[1], $colour[2] . $colour[3], $colour[4] . $colour[5] );
+			} elseif ( strlen( $colour ) == 3 ) {
+				list( $r, $g, $b ) = array( $colour[0] . $colour[0], $colour[1] . $colour[1], $colour[2] . $colour[2] );
+			} else {
+				return false;
+			}
+			$r = hexdec( $r );
+			$g = hexdec( $g );
+			$b = hexdec( $b );
+			$value = $r . ',' . $g . ',' . $b;
+			if ( empty($alpha) === false ) {
+				return 'rgba(' . $value . ',' . $alpha . ')';
+			} else {
+				return 'rgb(' . $value . ')';
+			}
+
 		}
-	}
+		 	/* Display Chart */
+	 	function display_weight_tracker_chart($weight_data, $options = false) {
+    	// Build the default arguments for a chart. This can then be overrided by what is being passed in (i.e. to support shortcode arguments)
+	 		$user_id = get_current_user_id();
+	 		$chart_config = array(
+				'user-id' => $user_id, //get_current_user_id(),
+				'type' => 'line',
+				'height' => 250,
+				'weight-line-color' => '#aeaeae',
+				'weight-fill-color' => '#f9f9f9',
+				'weight-target-color' => '#76bada',
+				'show-gridlines' => true,
+				'bezier' => true,
+				'hide_login_message_if_needed' => true,
+				'exclude-measurements' => false,
+				'ignore-login-status' => false
+			);
+
+    	// If we are PRO and the developer has specified options then override the default
+	 		if($options){
+	 			$chart_config = wp_parse_args( $options, $chart_config );
+	 		}
+
+			//$measurements_enabled = (false == $chart_config['exclude-measurements'] && ws_ls_any_active_measurement_fields()) ? true : false;
+	 		$measurements_enabled = false;
+    		// Make sure they are logged in                        
+	 		if (false == $chart_config['ignore-login-status'] && !is_user_logged_in())	{
+	 			if (false == $chart_config['hide_login_message_if_needed']) {
+	 				return ws_ls_display_blockquote(__('You need to be logged in to record your weight.', WE_LS_SLUG) , '', false, true);
+	 			} else {
+	 				return;
+	 			}
+	 		}
+
+	 		$chart_id = 'ws_ls_chart_' . rand(10,1000) . '_' . rand(10,1000);
+
+			// If Pro disabled or Measurements to be displayed then force to line
+	 		if($measurements_enabled) {
+	 			$chart_config['type'] = 'line';
+	 		}
+
+			//$y_axis_unit = (ws_ls_get_config('WE_LS_IMPERIAL_WEIGHTS')) ? __('kg', WE_LS_SLUG) : __('kg', WE_LS_SLUG) ;
+	 		$y_axis_unit = 'lbs';
+			//$y_axis_measurement_unit = ('inches' == ws_ls_get_config('WE_LS_MEASUREMENTS_UNIT')) ? __('Inches', WE_LS_SLUG) : __('CM', WE_LS_SLUG) ;
+	 		$y_axis_measurement_unit = 'inches';
+			//$point_size = (WE_LS_ALLOW_POINTS && WE_LS_CHART_POINT_SIZE > 0) ? WE_LS_CHART_POINT_SIZE : 0;
+	 		$point_size = 1;
+	 		$line_thickness = 2;
+
+			// Build graph data
+	 		$graph_data['labels'] = array();
+	 		$graph_data['datasets'][0] = array( 'label' => 'Weight',
+	 			'borderColor' => $chart_config['weight-line-color'],
+	 		);
+
+			// Determine fill based on chart type
+	 		if ('line' == $chart_config['type']) {
+
+			// Add a fill colour under weight line?
+			//if ( true === WE_LS_WEIGHT_FILL_LINE_ENABLED ) {
+	 			if (false ) {
+	 				$graph_data['datasets'][0]['fill'] = true;
+	 				$graph_data['datasets'][0]['backgroundColor'] =  um_hex_to_rgb( '#aeaeae', '0.5' );
+	 			} else {
+	 				$graph_data['datasets'][0]['fill'] = false;
+	 			}
+
+	 			$graph_data['datasets'][0]['lineTension'] = ($chart_config['bezier']) ? 0.4 : 0;
+	 			$graph_data['datasets'][0]['pointRadius'] = $point_size;
+	 			$graph_data['datasets'][0]['borderWidth'] = $line_thickness;
+	 		} else {
+	 			$graph_data['datasets'][0]['fill'] = true;
+	 			$graph_data['datasets'][0]['backgroundColor'] = $chart_config['weight-fill-color'];
+	 			$graph_data['datasets'][0]['borderWidth'] = 2;
+
+	 		}
+
+	 		$graph_data['datasets'][0]['data'] = array();
+	 		$graph_data['datasets'][0]['yAxisID'] = 0;
+
+	 		$target_weight = 150; //ws_ls_get_user_target($chart_config['user-id']);
+
+	 		$chart_type_supports_target_data = ('bar' == $chart_config['type']) ? false : true;
+
+	 		$dataset_index = 1;
+	 		$number_of_measurement_datasets_with_data = 0;
+
+			// If target weights are enabled, then include into javascript data object
+	 		if ($target_weight != false && false && $chart_type_supports_target_data){
+
+	 			$graph_data['datasets'][1] = array( 'label' =>  __('Target', WE_LS_SLUG),
+	 				'borderColor' => $chart_config['weight-target-color'],
+	 				'borderWidth' => $line_thickness,
+	 				'pointRadius' => 0,
+	 				'borderDash' => array(5,5),
+	 				'fill' => false,
+	 				'type' => 'line'
+	 			);
+	 			$graph_data['datasets'][1]['data'] = array();
+	 			$dataset_index = 2;
+	 		}
+
+	// ----------------------------------------------------------------------------
+	// Measurements - add measurement sets if enabled!
+	// ----------------------------------------------------------------------------
+
+	 		if($measurements_enabled) {
+	 			$active_measurement_fields =  array(); //ws_ls_get_active_measurement_fields();
+	 			$active_measurment_field_keys =  array(); //ws_ls_get_keys_for_active_measurement_fields('', true);
+	 			$measurement_graph_indexes = array();
+
+
+	 			foreach ($active_measurement_fields as $key => $data) {
+
+	 				$graph_data['datasets'][$dataset_index] = array( 'label' => 'title',
+	 					'borderColor' => $data['chart_colour'],
+	 					'borderWidth' => $line_thickness,
+	 					'pointRadius' => $point_size,
+	 					'fill' => false,
+	 					'spanGaps' => true,
+	 					'yAxisID' => 'y-axis-measurements',
+	 					'type' => 'line',
+	 					'lineTension' => ($chart_config['bezier']) ? 0.4 : 0
+	 				);
+	 				$graph_data['datasets'][$dataset_index]['data'] = array();
+	 				$graph_data['datasets'][$dataset_index]['data-count'] = 0;
+
+	 				$measurement_graph_indexes[$key] = $dataset_index;
+
+	 				$dataset_index++;
+	 			}
+	 		}
+
+	 		if($weight_data) {
+	 			foreach ($weight_data as $weight_object) {
+
+	 				array_push($graph_data['labels'], $weight_object['weight_date']);
+	 				array_push($graph_data['datasets'][0]['data'], $weight_object['weight']);
+
+					// Set target weight if specified
+	 				if ($target_weight != false && false && $chart_type_supports_target_data){
+	 					array_push($graph_data['datasets'][1]['data'], $target_weight['graph_value']);
+	 				}
+
+			// ----------------------------------------------------------------------------
+			// Add data for all measurements
+			// ----------------------------------------------------------------------------
+	 				if($measurements_enabled) {
+	 					foreach ($active_measurment_field_keys as $key) {
+
+					// If we have a genuine measurement value then add to graph data - otherwise NULL
+	 						if(!is_null($weight_object['measurements'][$key]) && 0 != $weight_object['measurements'][$key]) {
+	 							$graph_data['datasets'][$measurement_graph_indexes[$key]]['data'][] = $weight_object['measurements'][$key];
+	 							$graph_data['datasets'][$measurement_graph_indexes[$key]]['data-count']++;
+	 						} else {
+	 							$graph_data['datasets'][$measurement_graph_indexes[$key]]['data'][] = NULL;
+	 						}
+	 					}
+	 				}
+	 			}
+
+	 		}
+
+			// Remove any empty measurements from graph
+	 		if($measurements_enabled) {
+	 			foreach ($active_measurment_field_keys as $key) {
+	 				if(0 == $graph_data['datasets'][$measurement_graph_indexes[$key]]['data-count']) {
+					//		unset($graph_data['datasets'][$measurement_graph_indexes[$key]]);
+	 				} else {
+	 					$number_of_measurement_datasets_with_data++;
+	 				}
+	 			}
+	 		}
+
+			// Embed JavaScript data object for this graph into page
+	 		wp_localize_script( 'jquery-chart-ws-ls', $chart_id . '_data', $graph_data );
+
+	 		$graph_line_options = array();
+
+			// Set initial y axis for weight
+	 		$graph_line_options = array(
+	 			'scales' => array('yAxes' => array(array('scaleLabel' => array('display' => true, 'labelString' => 'Weight' . ' (' . $y_axis_unit . ')'), 'type' => "linear", 'ticks' => array('beginAtZero' => false), "display" => "true", "position" => "left", "id" => "y-axis-weight", '' , 'gridLines' => array('display' => $chart_config['show-gridlines']))))
+	 		);
+
+	 		if ('line' == $chart_config['type']) {
+
+				// Add measurement Axis?
+	 			if ($measurements_enabled ) {
+	 				$graph_line_options['scales']['yAxes'] = array_merge($graph_line_options['scales']['yAxes'], array(array('scaleLabel' => array('display' => true, 'labelString' => __('Measurement', WE_LS_SLUG) . ' (' .$y_axis_measurement_unit. ')'), 'ticks' => array('beginAtZero' => false), 'type' => "linear", "display" => (($number_of_measurement_datasets_with_data != 0) ? true : false), "position" => "right", "id" => "y-axis-measurements", 'gridLines' => array('display' => $chart_config['show-gridlines']))));
+	 			}
+	 		}
+
+			// If gridlines are disabled, hide x axes too
+	 		if(!$chart_config['show-gridlines']) {
+	 			$graph_line_options['scales']['xAxes'] = array(array('gridLines' => array('display' => false)));
+	 		}
+
+			// Legend
+	 		$graph_line_options['legend']['position'] = 'bottom';
+	 		$graph_line_options['legend']['labels']['boxWidth'] = 10;
+	 		$graph_line_options['legend']['labels']['fontSize'] = 10;
+
+			// Font settings
+	 		$graph_line_options['fontColor'] = '#AEAEAE';
+	 		$graph_line_options['fontFamily'] = '';
+
+			// Embed JavaScript options object for this graph into page
+	 		wp_localize_script( 'jquery-chart-ws-ls', $chart_id . '_options', $graph_line_options );
+
+	 		$html = '<div><canvas id="' . $chart_id . '" class="ws-ls-chart" ' . (($chart_config['height']) ? 'height="'.  esc_attr($chart_config['height']) . '" ' : '') . ' data-chart-type="' . esc_attr($chart_config['type'])  . '" data-target-weight="' . esc_attr($target_weight['graph_value']) . '" data-target-colour="' . esc_attr($chart_config['weight-target-color']) . '"></canvas>';
+	 		$html .= '<div class="ws-ls-notice-of-refresh ws-ls-reload-page-if-clicked ws-ls-hide"><a href="#">' . 'You have modified data. Please refresh page.' . '</a></div>';
+	 		$html .= '</div>';
+	 		return $html;
+	 	}
+
+	} //end Profile class
 }

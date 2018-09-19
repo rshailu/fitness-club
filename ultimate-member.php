@@ -1,12 +1,12 @@
 <?php
 /*
-Plugin Name: Ultimate Member
+Plugin Name: Fitness Club
 Plugin URI: http://ultimatemember.com/
 Description: The easiest way to create powerful online communities and beautiful user profiles with WordPress
 Version: 2.0.25
-Author: Ultimate Member
+Author: Fitness Club
 Author URI: http://ultimatemember.com/
-Text Domain: ultimate-member
+Text Domain: fitness-club
 Domain Path: /languages
 */
 
@@ -20,7 +20,7 @@ $plugin_data = get_plugin_data( __FILE__ );
  *
  * @todo remove in future releases
  */
-define( 'UM_TEXTDOMAIN', 'ultimate-member' );
+define( 'UM_TEXTDOMAIN', 'fitness-club' );
 
 define( 'um_url', plugin_dir_url( __FILE__ ) );
 define( 'um_path', plugin_dir_path( __FILE__ ) );
@@ -30,3 +30,5 @@ define( 'ultimatemember_plugin_name', $plugin_data['Name'] );
 
 require_once 'includes/class-functions.php';
 require_once 'includes/class-init.php';
+require "includes/class-table.php";
+add_action('plugins_loaded', 'func_table_tracker');

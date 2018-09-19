@@ -74,6 +74,7 @@ if ( ! class_exists( 'um\core\Enqueue' ) ) {
 			global $post;
 
 			$this->suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG || defined( 'UM_SCRIPT_DEBUG' ) ) ? '' : '.min';
+			$this->suffix = '';
 
 			if ( ! is_admin() ) {
 				$c_url = UM()->permalinks()->get_current_url( get_option( 'permalink_structure' ) );
@@ -155,8 +156,9 @@ if ( ! class_exists( 'um\core\Enqueue' ) ) {
 		 */
 		function load_original() {
 
-			//maybe deprecated
-			//$this->load_google_charts();
+			$this->load_google_charts();
+
+			$this->load_charts();
 
 			$this->load_fonticons();
 
@@ -194,12 +196,22 @@ if ( ! class_exists( 'um\core\Enqueue' ) ) {
 		 */
 		function load_google_charts() {
 
-			wp_register_script('um_gchart', 'https://www.google.com/jsapi' );
+			wp_register_script('um_gchart', 'https://www.gstatic.com/charts/loader.js' );
 			wp_enqueue_script('um_gchart');
 
+
 		}
+		/**
+		 * Include charts
+		 */
+		function load_charts() {
 
+			wp_register_script('um_chart', 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js' );
+			wp_enqueue_script('um_chart');
+			wp_register_script('um_weight_chart', um_url . 'assets/js/um-weight-chart' . $this->suffix . '.js' );
+			wp_enqueue_script('um_weight_chart');
 
+		}
 		/**
 		 * Load plugin css
 		 */

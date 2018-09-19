@@ -1,6 +1,9 @@
 <?php UM()->shortcodes()->loop = UM()->query()->make('post_type=comment&number=10&offset=0&user_id=' . um_user('ID') ); ?>
 
-<?php if ( UM()->shortcodes()->loop ) { ?>
+<?php //if ( UM()->shortcodes()->loop ) 
+     if(true)
+     	
+      { ?>
 			
 	<?php UM()->shortcodes()->load_template('profile/comments-single'); ?>
 	

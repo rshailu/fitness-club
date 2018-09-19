@@ -187,11 +187,89 @@
 		 * ?>
 		 */
 		do_action( "um_profile_content_{$nav}_{$subnav}", $args );
+		do_action( "save_weight_record", $args );
 
 		print "</div>";
 
 		if ( um_is_on_edit_profile() ) { ?>
 			</form>
-		<?php } ?>
+		<?php } 
+		$weightList = UM()->profile()->get_user_weight_list(um_user('ID'));
+		?>
+		<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+		<script type="text/javascript">
+			google.charts.load('current', {'packages':['corechart']});
+			google.charts.setOnLoadCallback(drawChart);
+
+			function drawChart() {
+				var data=[];
+				 var Header= ['Date', 'Muscle', 'Fat'];
+				 data.push(Header);
+				 var temp = [];
+				 <?php 
+				    $index = 0;
+					foreach ( $weightList as $wdata ) { 
+                     $index = $index + 1;
+						?>
+				      temp=[];
+				      temp.push("<?php echo date("m/d/y", strtotime($wdata['weight_date'])) ?>");
+				      temp.push(<?php echo $wdata['muscle'] ?>);
+					  temp.push(<?php echo $wdata['fat'] ?>);
+				      data.push(temp);
+				  <?php } ?>
+				var options = {
+					title: 'Weight Management',
+					curveType: 'function',
+					legend: { position: 'bottom' }
+				};
+                var dataTable = google.visualization.arrayToDataTable(data);
+				var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
+
+				chart.draw(dataTable, options);
+			}
+		</script>
+		<div id="curve_chart" style="width: 700px; height: 500px;left: -200px;"></div>
+		<div>
+			<table width="100%" class="ws-ls-data-table">
+				<thead>
+					<tr>
+						<th width="25%">Date</th>
+						<th width="25%">Weight</th>
+						<th width="25%">Fat</th>
+						<th width="25%">Muscle</th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php 
+					//$weightList = UM()->profile()->get_user_weight_list(um_user('ID'));
+					foreach ( $weightList as $data ) { ?>
+					<tr>
+						<td><?php echo date("m/d/Y", strtotime($data['weight_date'])) ?></td>
+						<td><?php echo $data['weight'] ?></td>
+						<td><?php echo $data['fat'] ?></td>
+						<td><?php echo $data['muscle'] ?></td>
+					<?php } ?>
+				</tbody>
+			</table>
+		</div>
+		<div>
+			<form action="http://localhost:8888/fitness/user/" method="post" class="we-ls-weight-form we-ls-weight-form-validate ws_ls_display_form%s" id="fitness-club-weight-entry-form" data-measurements-enabled="false"  data-user_id="<?php echo um_profile_id(); ?>" data-measurements-all-required="false" data-is-target-form="false">
+				<input type="hidden" value="false" id="ws_ls_is_target" name="ws_ls_is_target">
+				<input type="hidden" value="true" id="ws_ls_is_weight_form" name="ws_ls_is_weight_form">
+				<input type="hidden" value="1" id="ws_ls_user_id" name="ws_ls_user_id">
+				<input type="hidden" value="d0646c9e7683d63e9e9cafce849c2acb" id="ws_ls_security" name="ws_ls_security"><div class="ws-ls-inner-form comment-input">
+					<div class="ws-ls-error-summary" style="display: none;">
+						<ul style="display: none;"></ul>
+					</div>
+					<input type="text" name="weight-entry-date" tabindex="4" id="weight-entry-date" value="<?php echo date("m/d/Y") ?>" placeholder="09/09/2018" size="22" class="we-ls-datepicker hasDatepicker ws-ls-valid" aria-required="true" aria-invalid="false"><input type="number" tabindex="5" step="any" min="1" name="fc-weight" id="fc-weight" value="" placeholder="Weight" size="22" aria-required="true">
+					<input type="number" tabindex="5" step="any" min="1" name="fc-fat" id="fc-fat" value="" placeholder="Fat" size="22" aria-required="true">
+					<input type="number" tabindex="5" step="any" min="1" name="fc-muscle" id="fc-muscle" value="" placeholder="Muscle" size="22" aria-required="true">
+				</div><div class="ws-ls-form-buttons">
+					<div>
+						<input name="fc-weight-submit" type="button" id="fc-weight-submit" tabindex="7" value="Save Entry" class="comment-submit button" data-user_id="<?php echo um_profile_id(); ?>" >	</div>
+					</div>
+				</form>
+			</div>
 	</div>
+
 </div>

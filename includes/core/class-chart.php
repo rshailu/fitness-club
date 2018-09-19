@@ -86,13 +86,7 @@ if ( ! class_exists( 'um\core\Chart' ) ) {
 					data.addColumn('string', '<?php echo $x_label; ?>');
 					data.addColumn('number', '<?php echo $y_label; ?>');
 
-					<?php /*if ( ! empty( $data_y ) ) {
-
-						foreach ( $data_y as $key => $val ) {
-
-						}
-
-					}*/ ?>
+					<?php  ?>
 
 					var min_data = 0;
 					var max_data = data.getColumnRange(1).max;

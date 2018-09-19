@@ -1,4 +1,4 @@
-=== Ultimate Member - User Profile & Membership Plugin ===
+===Fitness Club - User Profile & Membership Plugin ===
 Author URI: https://fitnessclub.com/
 Plugin URI: https://fitnessclub.com/
 Contributors: rshailu
@@ -36,4 +36,3 @@ Ultimate Member is the #1 user profile & membership plugin for WordPress. The pl
 * Developer friendly with dozens of actions and filters
 
 Read about all of the plugin's features at [Ultimate Member](https://fitnessclub.com)
-

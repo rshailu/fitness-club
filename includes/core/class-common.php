@@ -137,6 +137,7 @@ if ( ! class_exists( 'um\core\Common' ) ) {
 
 			return $q;
 		}
-	}
+
+	}//end of Common class
 
 }

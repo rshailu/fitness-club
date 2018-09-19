@@ -1395,3 +1395,8 @@ function um_profile_menu( $args ) {
 
 }
 add_action( 'um_profile_menu', 'um_profile_menu', 9 );
+
+function save_weight_record($args) {
+	error_log("call save_weight_record from um-action-profile ____________");
+}
+add_action( 'save_weight_record', 'save_weight_record', 9 );

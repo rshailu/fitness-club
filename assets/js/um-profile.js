@@ -12,7 +12,32 @@ jQuery(document).ready(function() {
 		jQuery('.um-row-heading,.um-row').remove();
 		jQuery('.um-profile-note').show();
 	}
-	
+	jQuery(document).on('click', '#fc-weight-submit', function(e){
+		e.preventDefault();
+		console.log(jQuery(this).parents('.um').find('form').attr("id"));
+		var user_id = jQuery(this).attr('data-user_id');
+		var weight = jQuery("#fc-weight").val();
+		var fat = jQuery("#fc-fat").val();
+		var muscle = jQuery("#fc-muscle").val();
+		var weightEntryDate = jQuery("#weight-entry-date").val();
+		
+		jQuery.ajax({
+			url: wp.ajax.settings.url,
+			type: 'post',
+			data: {
+				action: 'fc_save_weight_entry',
+				user_id: user_id,
+				weight: weight,
+				fat: fat,
+				muscle: muscle,
+				weightEntryDate: weightEntryDate
+			},
+			success: function( response ) {
+				console.log("ajax success");
+			}
+		});
+		return false;
+	});
 	jQuery(document).on('click', '.um-profile-save', function(e){
 		e.preventDefault();
 		jQuery(this).parents('.um').find('form').submit();
