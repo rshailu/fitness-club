@@ -35,5 +35,5 @@ Ultimate Member is the #1 user profile & membership plugin for WordPress. The pl
 * Show author posts & comments on user profiles
 * Developer friendly with dozens of actions and filters
 
-Read about all of the plugin's features at [Ultimate Member](https://ultimatemember.com)
+Read about all of the plugin's features at [Ultimate Member](https://fitnessclub.com)
 
